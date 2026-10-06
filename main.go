@@ -17,32 +17,49 @@ func main() {
 
 	defer messages.Close()
 
-	sliceOfMessages := make([]byte, 8)
-
-	currentLine := ""
-
-	sliceOfString := make([]string, 2)
-
-	for {
-		count, err := messages.Read(sliceOfMessages)
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				break
-			}
-			fmt.Println("error reading file:", err)
-			return
-		}
-
-		sliceOfString = strings.Split(string(sliceOfMessages[:count]), "\n")
-
-		for i := range len(sliceOfString) - 1 {
-			currentLine += sliceOfString[i]
-
-			fmt.Printf("read: %s\n", currentLine)
-
-			currentLine = ""
-		}
-
-		currentLine += sliceOfString[len(sliceOfString)-1]
+	for i := range getLinesChannel(messages) {
+		fmt.Printf("read: %s\n", i)
 	}
+
+}
+
+func getLinesChannel(f io.ReadCloser) <-chan string {
+	ch := make(chan string)
+
+	go func() {
+		defer close(ch)
+
+		sliceOfMessages := make([]byte, 8)
+
+		currentLine := ""
+
+		sliceOfString := make([]string, 2)
+
+		defer f.Close()
+
+		for {
+			count, err := f.Read(sliceOfMessages)
+			if err != nil {
+				if errors.Is(err, io.EOF) {
+					break
+				}
+				fmt.Println("error reading file:", err)
+				return
+			}
+
+			sliceOfString = strings.Split(string(sliceOfMessages[:count]), "\n")
+
+			for i := range len(sliceOfString) - 1 {
+				currentLine += sliceOfString[i]
+
+				ch <- currentLine
+
+				currentLine = ""
+			}
+			currentLine += sliceOfString[len(sliceOfString)-1]
+		}
+
+	}()
+
+	return ch
 }
