@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -18,6 +19,10 @@ func main() {
 
 	sliceOfMessages := make([]byte, 8)
 
+	currentLine := ""
+
+	sliceOfString := make([]string, 2)
+
 	for {
 		count, err := messages.Read(sliceOfMessages)
 		if err != nil {
@@ -28,6 +33,16 @@ func main() {
 			return
 		}
 
-		fmt.Printf("read: %s\n", sliceOfMessages[:count])
+		sliceOfString = strings.Split(string(sliceOfMessages[:count]), "\n")
+
+		for i := range len(sliceOfString) - 1 {
+			currentLine += sliceOfString[i]
+
+			fmt.Printf("read: %s\n", currentLine)
+
+			currentLine = ""
+		}
+
+		currentLine += sliceOfString[len(sliceOfString)-1]
 	}
 }
