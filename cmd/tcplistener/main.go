@@ -52,6 +52,10 @@ func getLinesChannel(c net.Conn) <-chan string {
 			count, err := c.Read(sliceOfMessages)
 			if err != nil {
 				if errors.Is(err, io.EOF) {
+					if len(currentLine) > 0 {
+						ch <- currentLine
+					}
+
 					break
 				}
 				fmt.Println("error reading connection:", err)
