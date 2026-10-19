@@ -24,7 +24,7 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 
 	rl := string(b) //convert []byte into one string
 
-	parsedrl, err := parseRequestLine(rl) //seperate string and put them into a RequestLine{}
+	parsedrl, _, err := parseRequestLine(rl) //seperate string and put them into a RequestLine{}
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 	return newR, nil
 }
 
-func parseRequestLine(s string) (RequestLine, error) {
+func parseRequestLine(s string) (RequestLine, int, error) {
 	httpmsg := strings.Split(s, "\r\n")
 
 	rlValues := strings.Split(httpmsg[0], " ")
@@ -49,17 +49,16 @@ func parseRequestLine(s string) (RequestLine, error) {
 		}
 
 		if newRL.Method != strings.ToUpper(rlValues[0]) {
-			return RequestLine{}, fmt.Errorf("Wrong casing")
+			return RequestLine{}, 0, fmt.Errorf("Wrong casing")
 		}
 
 		if newRL.HttpVersion != "1.1" {
-			return RequestLine{}, fmt.Errorf("Wrong version")
+			return RequestLine{}, 0, fmt.Errorf("Wrong version")
 		}
 
-		return newRL, nil
+		return newRL, strings.Index(s, "\r\n") + 2, nil
 
 	} else {
-		return RequestLine{}, fmt.Errorf("Wrong number of Request line values")
+		return RequestLine{}, 0, fmt.Errorf("Wrong number of Request line values")
 	}
-
 }
